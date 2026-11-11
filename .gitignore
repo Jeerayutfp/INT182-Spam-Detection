@@ -1,0 +1,15 @@
+# Python environments & cache
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Portable Tesseract OCR binaries (install locally or place in ./tesseract)
+tesseract/
+
+# Logs & OS clutter
+*.log
+.DS_Store
+Thumbs.db
+spam_prototype/test_ocr.png

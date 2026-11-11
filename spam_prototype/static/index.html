@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spam Risk Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafaf9;--fg:#18181b;--mute:#71717a;--line:#e4e4e7;--card:#fff;
+--normal:#16a34a;--suspicious:#d97706;--spam:#dc2626}
+@media(prefers-color-scheme:dark){:root{--bg:#0e0e10;--fg:#f4f4f5;--mute:#a1a1aa;--line:#27272a;--card:#161618;
+--normal:#4ade80;--suspicious:#fbbf24;--spam:#f87171}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.6 "Noto Sans Thai",system-ui,sans-serif}
+main{max-width:560px;margin:0 auto;padding:72px 20px 48px}
+h1{font-size:1.25rem;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--mute);font-size:.9rem;margin:0 0 32px}
+textarea{width:100%;height:132px;padding:14px 16px;resize:vertical;font:inherit;color:inherit;
+background:var(--card);border:1px solid var(--line);border-radius:12px;outline:none;transition:border-color .15s}
+textarea:focus{border-color:var(--fg)}
+.row{display:flex;gap:10px;margin-top:12px;align-items:center}
+button,.ghost{font:inherit;font-size:.9rem;cursor:pointer;border-radius:999px;padding:9px 20px;transition:opacity .15s}
+button{background:var(--fg);color:var(--bg);border:0}
+button:hover,.ghost:hover{opacity:.75}
+.ghost{border:1px solid var(--line);color:var(--fg);background:transparent}
+#drop{margin-left:auto;color:var(--mute);font-size:.8rem}
+#out{margin-top:40px;opacity:0;transform:translateY(6px);transition:.25s}
+#out.on{opacity:1;transform:none}
+.lv{display:flex;align-items:baseline;gap:12px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.lv h2{margin:0;font-size:1.5rem;font-weight:600;color:var(--c)}
+.pct{margin-left:auto;font-size:.9rem;color:var(--mute);font-variant-numeric:tabular-nums}
+.bar{height:3px;background:var(--line);border-radius:2px;margin:14px 0 20px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--c);transition:width .5s ease}
+.advice{margin:0 0 20px}
+.read{font-size:.8rem;color:var(--mute);border-top:1px solid var(--line);padding-top:14px;white-space:pre-wrap;word-break:break-word}
+.read b{font-weight:400;display:block;margin-bottom:2px;letter-spacing:.04em;text-transform:uppercase;font-size:.7rem}
+</style>
+</head>
+<body>
+<main>
+  <h1>Spam Risk Checker</h1>
+  <p class="sub">วางข้อความหรือรูปภาพภาษาไทย แล้วดูระดับความเสี่ยง</p>
+
+  <textarea id="t" placeholder="วางข้อความ SMS / แชตที่นี่"></textarea>
+  <div class="row">
+    <button id="go">ตรวจสอบ</button>
+    <label class="ghost">อัปโหลดรูป<input id="f" type="file" accept="image/*" hidden></label>
+    <span id="drop"></span>
+  </div>
+
+  <section id="out" aria-live="polite"></section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id), out=$('out'), esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function busy(m){$('drop').textContent=m||''}
+function show(r){
+  out.classList.remove('on');
+  if(r.error){out.innerHTML=`<p class="advice" style="color:var(--spam)">${esc(r.error)}</p>`;requestAnimationFrame(()=>out.classList.add('on'));return}
+  out.style.setProperty('--c',`var(--${r.label})`);
+  out.innerHTML=`<div class="lv"><span class="dot"></span><h2>${esc(r.level)}</h2><span class="pct">${Math.round(r.risk_score*100)}%</span></div>
+  <div class="bar"><i></i></div>
+  <p class="advice">${esc(r.advice)}</p>
+  <div class="read"><b>ข้อความที่อ่านได้</b>${esc(r.text)}</div>`;
+  requestAnimationFrame(()=>{out.classList.add('on');out.querySelector('.bar i').style.width=Math.round(r.risk_score*100)+'%'});
+}
+async function call(p,opt){busy('กำลังประเมิน…');try{show(await (await fetch(p,opt)).json())}catch(e){show({error:'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'})}busy('')}
+$('go').onclick=()=>call('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:$('t').value})});
+$('t').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))$('go').click()});
+$('f').onchange=()=>{const fd=new FormData();fd.append('image',$('f').files[0]);call('/api/predict-image',{method:'POST',body:fd})};
+</script>
+</body>
+</html>
