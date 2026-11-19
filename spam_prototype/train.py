@@ -32,10 +32,10 @@ if __name__ == '__main__':
         TfidfVectorizer(analyzer='char_wb', ngram_range=(2, 4), sublinear_tf=True, min_df=2),
         LogisticRegression(max_iter=2000, class_weight='balanced', C=5))
 
-    cv = StratifiedGroupKFold(3, shuffle=True, random_state=0)
+    cv = StratifiedGroupKFold(10, shuffle=True, random_state=0)
     names = ['normal', 'spam']
     pred = cross_val_predict(mk(), d.clean, d.y, cv=cv, groups=d.grp)
-    print('\n=== Benchmark 3-Fold Group CV (data.xlsx only) ===')
+    print('\n=== Benchmark 10-Fold Group CV (data.xlsx only) ===')
     print(classification_report(d.y, pred, target_names=names, digits=3))
     print(confusion_matrix(d.y, pred))
 
